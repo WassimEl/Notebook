@@ -77,7 +77,7 @@ async function E(k,t){const iv=crypto.getRandomValues(new Uint8Array(12));return
 async function D(k,s){const[i,c]=s.split('.');return td.decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:ub(i)},k,ub(c)))}
 /* dialogue */
 function ask(t,f,del){return new Promise(res=>{const d=document.createElement('dialog');
- d.innerHTML=`<form method="dialog"><b>${esc(t)}</b>`+f.map(x=>`<label>${x.l}</label>`+(x.o?`<select name="${x.k}">${x.o.map(o=>`<option value="${esc(o[0])}"${o[0]==x.v?' selected':''}>${esc(o[1])}</option>`).join('')}</select>`:`<input name="${x.k}" type="${x.t||'text'}" value="${esc(x.v||'')}" autocomplete="off">`)).join('')+`<div class="bt"><button type="button" onclick="this.closest('dialog').close('x')">Annuler</button>${del?'<button type="button" onclick="this.closest(\'dialog\').close(\'d\')">Supprimer</button>':''}<button class="ok" value="ok">OK</button></div></form>`;
+ d.innerHTML=`<form method="dialog"><b>${esc(t)}</b>`+f.map(x=>`<label>${x.l}</label>`+(x.o?`<select name="${x.k}">${x.o.map(o=>`<option value="${esc(o[0])}"${o[0]==x.v?' selected':''}>${esc(o[1])}</option>`).join('')}</select>`:`<input name="${x.k}" type="${x.t||'text'}" value="${esc(x.v||'')}" autocomplete="${x.a||'off'}">`)).join('')+`<div class="bt"><button type="button" onclick="this.closest('dialog').close('x')">Annuler</button>${del?'<button type="button" onclick="this.closest(\'dialog\').close(\'d\')">Supprimer</button>':''}<button class="ok" value="ok">OK</button></div></form>`;
  d.onclose=()=>{const v=d.returnValue,o={};d.querySelectorAll('[name]').forEach(i=>o[i.name]=i.value);d.remove();res(v=='ok'?o:v=='d'?{...o,_d:1}:null)};
  document.body.append(d);d.showModal();const i=d.querySelector('input');i&&i.focus()})}
 /* arbre */
@@ -108,6 +108,14 @@ function lockAll(){flush();keys={};pl={};if(cur&&vk(S.notes[cur]))closeEd();rend
 const lockQ=v=>{delete keys[v];Object.values(S.notes).forEach(n=>{if(vid(n.folder)==v)delete pl[n.id]})};
 function lockV(v){flush();lockQ(v);if(cur&&vk(S.notes[cur])==v)closeEd();else render();toast('Coffre verrouillé')}
 const LK=(lk,id)=>`<svg class="lk" viewBox="0 0 24 24" data-lk="${id}"${lk?'':' style="stroke:var(--ac)"'}><rect x="5" y="11" width="14" height="9" rx="2"/><path d="${lk?'M8 11V8a4 4 0 0 1 8 0v3':'M8 11V8a4 4 0 0 1 7-2.6'}"/></svg>`;
+async function changePw(v){const f=S.folders[v];let err='';
+ for(;;){const r=await ask('Changer le mot de passe'+(err?' — '+err:''),[{k:'c',l:'Mot de passe actuel',t:'password',a:'current-password'},{k:'n',l:'Nouveau mot de passe',t:'password',a:'new-password'},{k:'m',l:'Répéter le nouveau',t:'password',a:'new-password'}]);
+  if(!r)return;if(!r.n){err='nouveau mot de passe vide';continue}if(r.n!==r.m){err='les deux ne correspondent pas';continue}
+  let k;try{k=await mk(r.c,f.salt);if(await D(k,f.check)!=='ok')throw 0}catch(e){err='mot de passe actuel incorrect';continue}
+  keys[v]=k;const ns=Object.values(S.notes).filter(n=>!n.purged&&vid(n.folder)==v);
+  for(const n of ns)if(n.enc)try{pl[n.id]=JSON.parse(await D(k,n.enc))}catch(e){}
+  if(ns.some(n=>n.enc&&!pl[n.id])){toast('Une note ne peut pas être déchiffrée : mot de passe non changé');return}
+  await rekey(v,r.n);render();toast('Mot de passe changé');return}}
 async function verify(v){const f=S.folders[v],r=await ask('Mot de passe de « '+f.name+' »',[{k:'p',l:'Mot de passe',t:'password'}]);if(!r)return false;
  try{if(await D(await mk(r.p,f.salt),f.check)==='ok')return true}catch(e){}toast('Mot de passe incorrect');return false}
 async function newVault(){const r=await ask('Nouveau coffre',[{k:'n',l:'Nom'},{k:'p',l:'Mot de passe (impossible à récupérer)',t:'password'}]);if(!r||!r.n||!r.p)return;
@@ -123,13 +131,13 @@ async function put(n){n.updated=now();const v=vk(n);if(v&&keys[v]){n.enc=await E
 async function edit(k){const[t,i]=k.split(':'),o=t=='f'?S.folders[i]:S.notes[i],cf=t=='f'?o.parent:o.folder;
  const opts=[['','Racine'],...live(S.folders).filter(f=>!(t=='f'&&(f.id==i||sub(i).has(f.id)))).map(f=>[f.id,f.name])];
  const fl=[...(t=='f'?[{k:'n',l:'Nom',v:o.name}]:[]),{k:'e',l:'Emoji',v:o.emoji},{k:'c',l:'Couleur',o:CL,v:o.color||''}];
- if(!o.vault)fl.push({k:'to',l:'Dans le dossier',o:opts,v:cf||''});else fl.push({k:'np',l:'Nouveau mot de passe (vide = inchangé)',t:'password'});
+ if(!o.vault)fl.push({k:'to',l:'Dans le dossier',o:opts,v:cf||''});else fl.push({k:'act',l:'Mot de passe du coffre',o:[['','Ne pas changer'],['pw','Changer le mot de passe…']]});
  const r=await ask(t=='f'?'Dossier':'Note',fl,true);if(!r)return;
  if(r._d){if(o.vault&&!await verify(i))return;if(!confirm('Mettre à la corbeille ?'))return;const fs=t=='f'?[i,...sub(i)]:[];
   fs.forEach(x=>{S.folders[x].deleted=1;S.folders[x].updated=now()});
   live(S.notes).filter(n=>n.id==i&&t=='n'||fs.includes(n.folder)).forEach(n=>{n.deleted=1;n.updated=now();if(n.id==cur)closeEd()});if(o.vault)lockQ(i);save();return render()}
  if(!o.vault&&(r.to||null)!==(cf||null)){if(vid(r.to||null)!==vid(cf||null))toast('Déplacement impossible entre un coffre et l\'extérieur');else{if(t=='f')o.parent=r.to||null;else o.folder=r.to||null}}
- if(r.np){if(!await verify(i))return;if(keys[i])await rekey(i,r.np);else toast('Déverrouille le coffre d\'abord')}if(r.n)o.name=r.n;o.emoji=r.e;o.color=r.c;o.updated=now();save();render()}
+ if(r.act=='pw')await changePw(i);if(r.n)o.name=r.n;o.emoji=r.e;o.color=r.c;o.updated=now();save();render()}
 async function rekey(v,pw){const f=S.folders[v],salt=b64(crypto.getRandomValues(new Uint8Array(16))),k=await mk(pw,salt);f.salt=salt;f.check=await E(k,'ok');keys[v]=k;
  for(const n of Object.values(S.notes))if(!n.purged&&vid(n.folder)==v&&pl[n.id]){n.enc=await E(k,JSON.stringify(pl[n.id]));n.updated=now()}f.updated=now();save()}
 /* corbeille */
@@ -216,6 +224,22 @@ const pm=$('#pm');$('#mb').onclick=e=>{e.stopPropagation();pm.style.display=pm.s
 document.addEventListener('click',e=>{if(!e.target.closest('#pm'))pm.style.display='none'});pm.onclick=e=>{if(e.target.matches('#pm>div'))pm.style.display='none'};
 $('#lb').onclick=()=>document.body.classList.toggle('sb');$('#hd').onclick=$('#sh').onclick=()=>document.body.classList.remove('sb');
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&Object.keys(keys).length)lockAll()});
+const up=(n,q)=>{n=n&&(n.nodeType==3?n.parentElement:n);return n&&n.closest(q)};
+const before=(el,s)=>{const r=document.createRange();r.selectNodeContents(el);r.setEnd(s.anchorNode,s.anchorOffset);return r.toString().replace(/\u00a0/g,'')};
+function unci(ci,s){ci.querySelectorAll('.chk').forEach(c=>c.remove());ci.removeAttribute('class');const t=ci.firstChild;if(t&&t.nodeType==3)t.textContent=t.textContent.replace(/^\u00a0/,'');
+ if(!ci.textContent)ci.innerHTML='<br>';const r=document.createRange();r.setStart(ci,0);r.collapse(true);s.removeAllRanges();s.addRange(r)}
+bd.addEventListener('keydown',e=>{if(e.defaultPrevented||e.isComposing||(e.key!='Enter'&&e.key!='Backspace'))return;
+ const s=getSelection();if(!s.rangeCount||!s.isCollapsed||!bd.contains(s.anchorNode))return;
+ const ci=up(s.anchorNode,'.ci'),li=up(s.anchorNode,'li');
+ if(ci&&bd.contains(ci)){
+  if(e.key=='Enter'){e.preventDefault();
+   if(!ci.textContent.replace(/[\s\u00a0]/g,''))unci(ci,s);
+   else{const r=s.getRangeAt(0),x=document.createRange();x.setStart(r.endContainer,r.endOffset);x.setEnd(ci,ci.childNodes.length);const f=x.extractContents();
+    f.querySelectorAll('.chk').forEach(c=>c.remove());const n=document.createElement('div');n.className='ci';n.innerHTML='<span class="chk" contenteditable="false"></span>&nbsp;';n.appendChild(f);ci.after(n);
+    const k=document.createRange();k.setStart(n.childNodes[1],1);k.collapse(true);s.removeAllRanges();s.addRange(k)}
+   onInput()}
+  else if(before(ci,s)===''){e.preventDefault();unci(ci,s);onInput()}}
+ else if(li&&e.key=='Backspace'&&before(li,s)===''){e.preventDefault();document.execCommand(li.parentElement.tagName=='OL'?'insertOrderedList':'insertUnorderedList');onInput()}});
 addEventListener('pagehide',flush);render();
 if(now()-S.lx>6048e5&&live(S.notes).length)toast('Pense à envoyer une synchro pour sauvegarder tes notes');
 </script></body></html>
