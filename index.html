@@ -73,20 +73,29 @@ button{transition:border-color .15s,background .15s}
 :root.ink{--bg:#000;--pn:#0b0b0d;--ln:#202026}
 :root.fo{--bg:#0e1411;--pn:#141c18;--ln:#24332c;--tx:#e4ede7;--mu:#84948b}
 #gv{position:fixed;inset:0;background:var(--bg);z-index:60;display:none}#gv .gt{height:56px;padding:calc(12px + env(safe-area-inset-top)) 16px 0}#gc{display:block}
+#qk{position:fixed;inset:0;background:#0008;z-index:70;display:none;padding:12vh 12px 0}
+#qk>div{max-width:560px;margin:auto;background:var(--pn);border:1px solid var(--ln);border-radius:16px;overflow:hidden;box-shadow:0 18px 50px #000b}
+#qi{width:100%;border:0;background:none;color:var(--tx);font-size:17px;padding:16px;outline:0;border-bottom:1px solid var(--ln)}
+#ql{max-height:50vh;overflow:auto}.qr{padding:10px 16px;cursor:pointer;display:flex;justify-content:space-between;gap:10px}.qr.s{background:var(--ac);color:#fff}.qr small{opacity:.65}
+#tk{position:fixed;inset:0;background:var(--bg);z-index:60;display:none;overflow:auto}#tk .gt{position:sticky;top:0;background:var(--bg);padding:calc(12px + env(safe-area-inset-top)) 16px 10px;display:flex;gap:12px;align-items:center}
+#tkl{max-width:680px;margin:0 auto;padding:0 16px 40px}#tkl h3{color:var(--mu);font-size:15px;margin:22px 0 4px}
+.tk{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--ln);cursor:pointer}.tk b{font-weight:500;display:block}.tk small{color:var(--mu)}.tk.d b{text-decoration:line-through;color:var(--mu)}
+#pm small{color:var(--mu);font-size:12px}
 </style></head><body class="sb">
 <div id="sh"></div>
 <div id="sb"><div id="sbh">Bibliothèque<button id="hd">Masquer</button></div>
  <div id="tb"><button class="p" id="nn">Note</button><button id="nf">Dossier</button><button id="nv">Coffre</button></div>
  <input id="sq" placeholder="Rechercher…"><div id="tree"></div></div>
-<div id="ed"><div id="top"><span><button id="lb">Bibliothèque</button> <button id="hm">Accueil</button></span><button id="mb">Menu</button></div>
+<div id="ed"><div id="top"><span><button id="lb">Bibliothèque</button> <button id="hm">Accueil</button> <button id="qb">Chercher</button></span><button id="mb">Menu</button></div>
  <div id="ph">Choisis une note ou crée-en une.<br><small>Tape / pour insérer un bloc, [[ pour lier une note.</small></div>
  <div id="ew"><input id="ti" placeholder="Titre"><div id="bd" contenteditable="true" data-p="Écris ici… tape / pour les blocs"></div><div id="wc"></div><div class="bl" id="bl"></div></div></div>
-<div id="gv"><div class="gt"><button id="gx">Fermer</button></div><canvas id="gc"></canvas></div><div id="pm"><div id="sd">Synchroniser (envoyer le fichier)</div><div id="im">Importer un fichier</div><div id="tp">Note depuis un modèle</div><div id="gh">Graphe des notes</div><div id="tr">Corbeille</div><div id="lk">Verrouiller les coffres</div><div id="th">Thème clair / sombre</div><div id="st">Réglages</div><label>Couleur d'accent<input type="color" id="ac"></label></div>
+<div id="qk"><div><input id="qi" placeholder="Chercher une note ou une action…" autocomplete="off"><div id="ql"></div></div></div><div id="tk"><div class="gt"><button id="tx">Fermer</button><b>Mes tâches</b></div><div id="tkl"></div></div><div id="gv"><div class="gt"><button id="gx">Fermer</button></div><canvas id="gc"></canvas></div><div id="pm"><div id="sa">Synchro GitHub maintenant<small id="sy"></small></div><div id="tkm">Mes tâches</div><div id="sd">Envoyer / télécharger un fichier</div><div id="im">Importer un fichier</div><div id="tp">Note depuis un modèle</div><div id="gh">Graphe des notes</div><div id="tr">Corbeille</div><div id="lk">Verrouiller les coffres</div><div id="th">Thème clair / sombre</div><div id="st">Réglages</div><label>Couleur d'accent<input type="color" id="ac"></label></div>
 <div id="fb"><button data-c="bold"><b>B</b></button><button data-c="italic"><i>I</i></button><button data-c="strikeThrough"><s>S</s></button><button data-c="hl">Surligner</button><button data-c="removeFormat">Effacer</button></div><div id="mn"></div><div id="ts"></div><input type="file" id="fi" accept=".json,application/json" hidden>
 <script>
 const $=s=>document.querySelector(s),K='nv1',now=()=>Date.now();
 let S={notes:{},folders:{},ac:'#7c5cff',lx:now()},keys={},pl={},cur=null,sel=null,open=new Set(),ctx=null,mi=0,L=[],tm;
 try{Object.assign(S,JSON.parse(localStorage.getItem(K)||'{}'))}catch(e){}
+let dirty=0,syncing=0,sty;
 const PD={theme:'nuit',fs:16,prev:1,date:1,wc:1,hp:1,hr:1,ht:1,hn:6,lock:2},P=()=>Object.assign({},PD,S.pref);
 const uid=()=>Math.random().toString(36).slice(2,10)+now().toString(36);
 const save=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){toast('Stockage plein : exporte tes notes')}};
@@ -126,10 +135,28 @@ $('#tree').onclick=async e=>{const lq=e.target.closest('[data-lk]');if(lq&&keys[
 async function goLink(i){const n=S.notes[i];if(!n||n.deleted)return;const v=vk(n);if(v&&(!cur||vk(S.notes[cur])!==v)&&!await unlock(v))return;openNote(i)}
 async function go(i){const n=S.notes[i];if(!n||n.deleted)return;const v=vk(n);if(v&&!keys[v]&&!await unlock(v))return;openNote(i)}
 /* coffres */
-async function unlock(v){const f=S.folders[v],r=await ask('Ouvrir « '+f.name+' »',[{k:'p',l:'Mot de passe',t:'password'}]);if(!r)return false;
- try{const k=await mk(r.p,f.salt);if(await D(k,f.check)!=='ok')throw 0;keys[v]=k;
-  for(const n of Object.values(S.notes))if(!n.purged&&vid(n.folder)==v&&n.enc)try{pl[n.id]=JSON.parse(await D(k,n.enc))}catch(e){}return true}
- catch(e){toast('Mot de passe incorrect');return false}}
+async function openV(v,pw){const f=S.folders[v];try{const k=await mk(pw,f.salt);if(await D(k,f.check)!=='ok')return false;keys[v]=k;
+ for(const n of Object.values(S.notes))if(!n.purged&&vid(n.folder)==v&&n.enc)try{pl[n.id]=JSON.parse(await D(k,n.enc))}catch(e){}return true}catch(e){return false}}
+/* Face ID (WebAuthn + PRF) : le mot de passe du coffre est gardé sur cet appareil, chiffré par une clé que seul Face ID peut produire */
+const FK='fid1',fidGet=()=>{try{return JSON.parse(localStorage.getItem(FK)||'{}')}catch(e){return{}}},fidSet=o=>{try{localStorage.setItem(FK,JSON.stringify(o))}catch(e){}};
+const fidOK=()=>!!(window.PublicKeyCredential&&navigator.credentials&&(location.protocol=='https:'||location.hostname=='localhost'));
+const rnd=n=>crypto.getRandomValues(new Uint8Array(n)),aes=raw=>crypto.subtle.importKey('raw',raw,'AES-GCM',false,['encrypt','decrypt']);
+async function fidKey(v){const f=fidGet(),a=await navigator.credentials.get({publicKey:{challenge:rnd(32),rpId:location.hostname,allowCredentials:[{type:'public-key',id:ub(f.cred)}],userVerification:'required',extensions:{prf:{eval:{first:te.encode('notes-vault-'+v)}}}}});
+ const o=a.getClientExtensionResults().prf;if(!o||!o.results||!o.results.first)throw new Error('PRF indisponible');return aes(o.results.first)}
+async function fidEnable(v){const f=S.folders[v];if(!fidOK())return toast('Face ID indisponible ici (il faut le site en https)');
+ const r=await ask('Face ID pour « '+f.name+' »',[{k:'p',l:'Mot de passe actuel du coffre',t:'password'}]);if(!r)return;
+ try{const k0=await mk(r.p,f.salt);if(await D(k0,f.check)!=='ok')throw 0}catch(e){return toast('Mot de passe incorrect')}
+ try{const o=fidGet();let k;
+  if(!o.cred){const c=await navigator.credentials.create({publicKey:{challenge:rnd(32),rp:{name:'Notes',id:location.hostname},user:{id:rnd(16),name:'notes',displayName:'Notes'},pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required',residentKey:'preferred'},extensions:{prf:{eval:{first:te.encode('notes-vault-'+v)}}}}});
+   const x=c.getClientExtensionResults().prf||{};if(!x.enabled&&!x.results)throw new Error('non pris en charge (iOS 18 requis)');
+   o.cred=b64(c.rawId);fidSet(o);if(x.results&&x.results.first)k=await aes(x.results.first)}
+  if(!k)k=await fidKey(v);
+  const o2=fidGet();o2.w=o2.w||{};o2.w[v]=await E(k,r.p);fidSet(o2);toast('Face ID activé pour ce coffre')}
+ catch(e){toast('Face ID : '+(e.message||'échec')+' — réessaie')}}
+async function unlock(v){const f=S.folders[v],o=fidGet();
+ if(o.cred&&o.w&&o.w[v]){try{if(await openV(v,await D(await fidKey(v),o.w[v])))return true}catch(e){}}
+ const r=await ask('Ouvrir « '+f.name+' »',[{k:'p',l:'Mot de passe',t:'password'}]);if(!r)return false;
+ if(await openV(v,r.p))return true;toast('Mot de passe incorrect');return false}
 function lockAll(){flush();keys={};pl={};if(cur&&vk(S.notes[cur]))closeEd();render();toast('Coffres verrouillés')}
 const lockQ=v=>{delete keys[v];Object.values(S.notes).forEach(n=>{if(vid(n.folder)==v)delete pl[n.id]})};
 function lockV(v){flush();lockQ(v);if(cur&&vk(S.notes[cur])==v)closeEd();else render();toast('Coffre verrouillé')}
@@ -141,7 +168,7 @@ async function changePw(v){const f=S.folders[v];let err='';
   keys[v]=k;const ns=Object.values(S.notes).filter(n=>!n.purged&&vid(n.folder)==v);
   for(const n of ns)if(n.enc)try{pl[n.id]=JSON.parse(await D(k,n.enc))}catch(e){}
   if(ns.some(n=>n.enc&&!pl[n.id])){toast('Une note ne peut pas être déchiffrée : mot de passe non changé');return}
-  await rekey(v,r.n);render();toast('Mot de passe changé');return}}
+  await rekey(v,r.n);{const o=fidGet();if(o.w)delete o.w[v];fidSet(o)}render();toast('Mot de passe changé (réactive Face ID si besoin)');return}}
 async function verify(v){const f=S.folders[v],r=await ask('Mot de passe de « '+f.name+' »',[{k:'p',l:'Mot de passe',t:'password'}]);if(!r)return false;
  try{if(await D(await mk(r.p,f.salt),f.check)==='ok')return true}catch(e){}toast('Mot de passe incorrect');return false}
 async function newVault(){const r=await ask('Nouveau coffre',[{k:'n',l:'Nom'},{k:'p',l:'Mot de passe (impossible à récupérer)',t:'password'}]);if(!r||!r.n||!r.p)return;
@@ -157,13 +184,13 @@ async function put(n){n.updated=now();const v=vk(n);if(v&&keys[v]){n.enc=await E
 async function edit(k){const[t,i]=k.split(':'),o=t=='f'?S.folders[i]:S.notes[i],cf=t=='f'?o.parent:o.folder;
  const opts=[['','Racine'],...live(S.folders).filter(f=>!(t=='f'&&(f.id==i||sub(i).has(f.id)))).map(f=>[f.id,f.name])];
  const fl=[...(t=='f'?[{k:'n',l:'Nom',v:o.name}]:[]),{k:'e',l:'Emoji',v:o.emoji},{k:'c',l:'Couleur',o:CL,v:o.color||''},...(t=='n'?[{k:'pin',l:'Épinglée',o:[['','Non'],['1','Oui']],v:o.pin?'1':''},{k:'tags',l:'Tags (séparés par des virgules)',v:(o.tags||[]).join(', ')}]:[])];
- if(!o.vault)fl.push({k:'to',l:'Dans le dossier',o:opts,v:cf||''});else fl.push({k:'act',l:'Mot de passe du coffre',o:[['','Ne pas changer'],['pw','Changer le mot de passe…']]});
+ if(!o.vault)fl.push({k:'to',l:'Dans le dossier',o:opts,v:cf||''});else fl.push({k:'act',l:'Mot de passe du coffre',o:[['','Ne pas changer'],['pw','Changer le mot de passe…'],['fid','Activer Face ID sur cet appareil'],['nofid','Désactiver Face ID pour ce coffre']]});
  const r=await ask(t=='f'?'Dossier':'Note',fl,true);if(!r)return;
  if(r._d){if(o.vault&&!await verify(i))return;if(!confirm('Mettre à la corbeille ?'))return;const fs=t=='f'?[i,...sub(i)]:[];
   fs.forEach(x=>{S.folders[x].deleted=1;S.folders[x].updated=now()});
   live(S.notes).filter(n=>n.id==i&&t=='n'||fs.includes(n.folder)).forEach(n=>{n.deleted=1;n.updated=now();if(n.id==cur)closeEd()});if(o.vault)lockQ(i);save();return render()}
  if(!o.vault&&(r.to||null)!==(cf||null)){if(vid(r.to||null)!==vid(cf||null))toast('Déplacement impossible entre un coffre et l\'extérieur');else{if(t=='f')o.parent=r.to||null;else o.folder=r.to||null}}
- if(r.act=='pw')await changePw(i);if(t=='n'){o.pin=r.pin?1:0;o.tags=(r.tags||'').split(',').map(x=>x.trim().replace(/^#/,'')).filter(Boolean)}if(r.n)o.name=r.n;o.emoji=r.e;o.color=r.c;o.updated=now();save();render()}
+ if(r.act=='pw')await changePw(i);else if(r.act=='fid')await fidEnable(i);else if(r.act=='nofid'){const o=fidGet();if(o.w)delete o.w[i];fidSet(o);toast('Face ID désactivé pour ce coffre')}if(t=='n'){o.pin=r.pin?1:0;o.tags=(r.tags||'').split(',').map(x=>x.trim().replace(/^#/,'')).filter(Boolean)}if(r.n)o.name=r.n;o.emoji=r.e;o.color=r.c;o.updated=now();save();render()}
 async function rekey(v,pw){const f=S.folders[v],salt=b64(crypto.getRandomValues(new Uint8Array(16))),k=await mk(pw,salt);f.salt=salt;f.check=await E(k,'ok');keys[v]=k;
  for(const n of Object.values(S.notes))if(!n.purged&&vid(n.folder)==v&&pl[n.id]){n.enc=await E(k,JSON.stringify(pl[n.id]));n.updated=now()}f.updated=now();save()}
 /* corbeille */
@@ -188,9 +215,9 @@ function openNote(i){flush();cur=i;const n=S.notes[i];$('#ph').style.display='no
  $('#bl').innerHTML=bk.length?'Liée depuis :<br>'+bk.map(x=>`<div data-id="${x.id}">${esc(T(x)||'Sans titre')}</div>`).join(''):'';
  if(innerWidth<900)document.body.classList.remove('sb');render()}
 function closeEd(){cur=null;$('#ew').style.display='none';$('#ph').style.display='block';document.body.classList.add('sb');render()}
-function flush(){clearTimeout(tm);if(!cur)return;const n=S.notes[cur];if(!n||n.deleted)return;const t=$('#ti').value,c=$('#bd').cloneNode(true);c.querySelectorAll('a.wl').forEach(a=>a.textContent='');const b=c.innerHTML;
- if(vk(n))pl[cur]={t,b};else{n.title=t;n.body=b}put(n);render();wc()}
-const onInput=()=>{clearTimeout(tm);tm=setTimeout(flush,350)};
+function flush(){clearTimeout(tm);if(!cur||!dirty)return;dirty=0;const n=S.notes[cur];if(!n||n.deleted)return;const t=$('#ti').value,c=$('#bd').cloneNode(true);c.querySelectorAll('a.wl').forEach(a=>a.textContent='');const b=c.innerHTML;
+ if(vk(n))pl[cur]={t,b};else{n.title=t;n.body=b}put(n);render();wc();schedSync()}
+const onInput=()=>{dirty=1;clearTimeout(tm);tm=setTimeout(flush,350)};
 $('#ti').oninput=onInput;
 $('#bl').onclick=e=>{const d=e.target.closest('[data-id]');d&&goLink(d.dataset.id)};
 /* menu « / » et [[ */
@@ -232,8 +259,10 @@ async function merge(d){if(!d||typeof d!='object')throw 0;let c=0;
  for(const n of live(S.notes)){const v=vk(n);if(v&&keys[v]&&n.enc&&!pl[n.id])try{pl[n.id]=JSON.parse(await D(keys[v],n.enc))}catch(e){}}
  save();return c}
 async function send(){flush();const f=new File([JSON.stringify(out())],`notes-${new Date().toISOString().slice(0,10)}.json`,{type:'application/json'});S.lx=now();save();
- if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:'Mes notes'})}catch(e){}}
- else{const a=document.createElement('a');a.href=URL.createObjectURL(f);a.download=f.name;a.click();toast('Fichier téléchargé')}}
+ const mob=/iPhone|iPad|Android/i.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&/Mac/.test(navigator.platform));
+ if(mob&&navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:'Mes notes'});return}catch(e){if(e.name=='AbortError')return}}
+ const a=document.createElement('a');a.href=URL.createObjectURL(f);a.download=f.name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4e3);
+ toast('Fichier téléchargé : envoie-le sur ton autre appareil (Discord, etc.)')}
 $('#fi').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const c=await merge(JSON.parse(await f.text()));toast(c+' élément(s) fusionné(s)');cur?openNote(cur):render()}catch(x){toast('Fichier invalide')}e.target.value=''};
 $('#nn').onclick=newNote;$('#nf').onclick=newFolder;$('#nv').onclick=newVault;$('#lk').onclick=lockAll;$('#sd').onclick=send;
 const setAc=v=>document.documentElement.style.setProperty('--ac',v);
@@ -249,7 +278,7 @@ $('#im').onclick=()=>$('#fi').click();
 const pm=$('#pm');$('#mb').onclick=e=>{e.stopPropagation();pm.style.display=pm.style.display=='block'?'none':'block'};
 document.addEventListener('click',e=>{if(!e.target.closest('#pm'))pm.style.display='none'});pm.onclick=e=>{if(e.target.matches('#pm>div'))pm.style.display='none'};
 $('#lb').onclick=()=>document.body.classList.toggle('sb');$('#hd').onclick=$('#sh').onclick=()=>document.body.classList.remove('sb');
-document.addEventListener('visibilitychange',()=>{if(document.hidden&&Object.keys(keys).length)lockAll()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&Object.keys(keys).length)lockAll();else flush();autoSync()});
 const up=(n,q)=>{n=n&&(n.nodeType==3?n.parentElement:n);return n&&n.closest(q)};
 const before=(el,s)=>{const r=document.createRange();r.selectNodeContents(el);r.setEnd(s.anchorNode,s.anchorOffset);return r.toString().replace(/\u00a0/g,'')};
 function unci(ci,s){ci.querySelectorAll('.chk').forEach(c=>c.remove());ci.removeAttribute('class');const t=ci.firstChild;if(t&&t.nodeType==3)t.textContent=t.textContent.replace(/^\u00a0/,'');
@@ -277,12 +306,53 @@ function home(){const p=P(),ns=live(S.notes).filter(n=>!vk(n)||pl[n.id]),cd=n=>`
  const tg=[...new Set(ns.flatMap(n=>n.tags||[]))];if(p.ht&&tg.length)o+=`<h3>Tags</h3><div class="tgs">${tg.map(t=>`<span data-t="${esc(t)}">#${esc(t)}</span>`).join('')}</div>`;
  if(!ns.length)o+='<p class="sub">Aucune note pour l\'instant. Crée ta première note avec le bouton « Note ».</p>';$('#ph').innerHTML=o}
 $('#ph').onclick=e=>{const c=e.target.closest('[data-id]'),t=e.target.closest('[data-t]');if(c)go(c.dataset.id);else if(t){$('#sq').value='#'+t.dataset.t;document.body.classList.add('sb');render()}};
-async function settings(){const p=P(),yn=[['1','Oui'],['0','Non']],sl=(k,l,o,v)=>({k,l,o,v:String(v)});
+const GU=g=>`https://api.github.com/repos/${g.repo}/contents/notes-sync.json`,GH=g=>({Authorization:'Bearer '+g.token,Accept:'application/vnd.github+json','Content-Type':'application/json'});
+const b64u=s=>{const u=te.encode(s);let b='';for(let i=0;i<u.length;i+=8192)b+=String.fromCharCode(...u.subarray(i,i+8192));return btoa(b)};
+const setSt=t=>{const e=$('#sy');if(e)e.textContent=t};
+const schedSync=()=>{clearTimeout(sty);if(S.gh&&S.gh.token)sty=setTimeout(()=>autoSync(),15000)};
+async function ghGet(g){const r=await fetch(GU(g),{headers:GH(g),cache:'no-store'});if(r.status==404)return{sha:null,data:null};
+ if(r.status==401||r.status==403)throw new Error('token refusé');if(!r.ok)throw new Error('GitHub '+r.status);const j=await r.json();
+ const txt=j.content?td.decode(ub(j.content.replace(/\n/g,''))):await(await fetch(GU(g),{headers:{...GH(g),Accept:'application/vnd.github.raw+json'},cache:'no-store'})).text();
+ return{sha:j.sha,data:JSON.parse(txt)}}
+async function autoSync(manual){const g=S.gh;if(!g||!g.token||!g.repo){if(manual){toast('Renseigne le dépôt et le token GitHub');settings()}return}
+ if(syncing)return;syncing=1;setSt('en cours…');
+ try{flush();for(let t=0;t<2;t++){const r=await ghGet(g);let rem=r.data;
+   if(rem&&rem.enc){if(!g.pw)throw new Error('mot de passe de synchro requis');try{rem=JSON.parse(await D(await mk(g.pw,rem.salt),rem.data))}catch(e){throw new Error('mot de passe de synchro incorrect')}}
+   const c=rem?await merge(rem):0;
+   if(c&&cur){const n=S.notes[cur];if(n&&n.deleted)closeEd();else if(n&&!dirty){$('#ti').value=T(n);$('#bd').innerHTML=clean(B(n))}}
+   let file=out();if(g.pw){const salt=(r.data&&r.data.salt)||b64(crypto.getRandomValues(new Uint8Array(16)));file={v:2,enc:1,salt,data:await E(await mk(g.pw,salt),JSON.stringify(file))}}
+   const res=await fetch(GU(g),{method:'PUT',headers:GH(g),body:JSON.stringify({message:'sync',content:b64u(JSON.stringify(file)),...(r.sha?{sha:r.sha}:{})})});
+   if(res.status==409||res.status==422)continue;if(!res.ok)throw new Error('GitHub '+res.status);
+   S.lastSync=now();save();setSt('à jour '+new Date().toLocaleTimeString('fr-BE',{hour:'2-digit',minute:'2-digit'}));if(c)render();if(manual)toast(c?c+' élément(s) reçu(s)':'Synchronisé');syncing=0;return}
+  throw new Error('conflit, réessaie')}catch(e){setSt('échec');if(manual)toast('Synchro impossible : '+e.message)}syncing=0}
+const ACT=[['Nouvelle note',()=>newNote()],['Note depuis un modèle',()=>tplNote()],['Accueil',()=>$('#hm').click()],['Mes tâches',()=>tasks()],['Graphe des notes',()=>graph()],['Corbeille',()=>trash()],['Synchro GitHub maintenant',()=>autoSync(true)],['Envoyer / télécharger un fichier',()=>send()],['Verrouiller les coffres',()=>lockAll()],['Réglages',()=>settings()]];
+let QL=[],qx=0;
+function qopen(){$('#qk').style.display='block';$('#qi').value='';qx=0;qrender();$('#qi').focus()}
+function qrender(){const q=$('#qi').value.trim().toLowerCase();
+ const nt=live(S.notes).filter(n=>(!vk(n)||pl[n.id])&&(!q||(T(n)+' '+B(n).replace(/<[^>]+>/g,' ')+' '+(n.tags||[]).join(' ')).toLowerCase().includes(q))).sort((a,b)=>b.updated-a.updated).slice(0,8).map(n=>[(n.emoji?n.emoji+' ':'')+(T(n)||'Sans titre'),'Note',()=>go(n.id)]);
+ QL=[...nt,...ACT.filter(a=>!q||a[0].toLowerCase().includes(q)).map(a=>[a[0],'Action',a[1]])];qx=Math.min(qx,Math.max(0,QL.length-1));
+ $('#ql').innerHTML=QL.map((r,i)=>`<div class="qr${i==qx?' s':''}" data-i="${i}"><span>${esc(r[0])}</span><small>${r[1]}</small></div>`).join('')||'<div class="qr">Rien trouvé</div>'}
+function qrun(i){const r=QL[i];if(!r)return;$('#qk').style.display='none';r[2]()}
+$('#qi').oninput=()=>{qx=0;qrender()};
+$('#qi').onkeydown=e=>{if(e.key=='ArrowDown'||e.key=='ArrowUp'){e.preventDefault();qx=(qx+(e.key=='ArrowDown'?1:QL.length-1))%Math.max(1,QL.length);qrender()}else if(e.key=='Enter'){e.preventDefault();qrun(qx)}else if(e.key=='Escape')$('#qk').style.display='none'};
+$('#ql').onclick=e=>{const r=e.target.closest('.qr[data-i]');r&&qrun(+r.dataset.i)};
+$('#qk').onclick=e=>{if(e.target.id=='qk')$('#qk').style.display='none'};$('#qb').onclick=qopen;
+addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()=='k'){e.preventDefault();qopen()}});
+function tasks(){flush();const L2=[];for(const n of live(S.notes)){if(vk(n)&&!pl[n.id])continue;const t=document.createElement('div');t.innerHTML=clean(B(n));
+  t.querySelectorAll('.chk').forEach((c,k)=>L2.push({n,k,d:c.classList.contains('d'),tx:(c.parentElement.textContent||'').replace(/\u00a0/g,' ').trim()}))}
+ const row=x=>`<div class="tk${x.d?' d':''}" data-n="${x.n.id}" data-k="${x.k}"><span class="chk${x.d?' d':''}"></span><div><b>${esc(x.tx)||'(vide)'}</b><small>${esc(T(x.n)||'Sans titre')}</small></div></div>`,op=L2.filter(x=>!x.d),dn=L2.filter(x=>x.d);
+ $('#tkl').innerHTML=(op.length?op.map(row).join(''):'<p style="color:var(--mu)">Aucune tâche en attente.</p>')+(dn.length?`<h3>Terminées (${dn.length})</h3>`+dn.slice(0,30).map(row).join(''):'');$('#tk').style.display='block'}
+async function tkToggle(id,k){const n=S.notes[id];if(id==cur){const c=$('#bd').querySelectorAll('.chk')[k];if(c){c.classList.toggle('d');dirty=1;flush()}return}
+ const t=document.createElement('div');t.innerHTML=clean(B(n));const c=t.querySelectorAll('.chk')[k];if(!c)return;c.classList.toggle('d');
+ if(vk(n))pl[id]={t:pl[id].t,b:t.innerHTML};else n.body=t.innerHTML;await put(n);schedSync()}
+$('#tkm').onclick=tasks;$('#sa').onclick=()=>autoSync(true);$('#tx').onclick=()=>$('#tk').style.display='none';
+$('#tkl').onclick=async e=>{const r=e.target.closest('.tk');if(!r)return;if(e.target.closest('.chk')){const y=$('#tk').scrollTop;await tkToggle(r.dataset.n,+r.dataset.k);tasks();$('#tk').scrollTop=y}else{$('#tk').style.display='none';go(r.dataset.n)}};
+async function settings(){const p=P(),g=S.gh||{},yn=[['1','Oui'],['0','Non']],sl=(k,l,o,v)=>({k,l,o,v:String(v)});
  const r=await ask('Réglages',[sl('theme','Thème',[['nuit','Nuit'],['encre','Encre (noir pur)'],['foret','Forêt'],['clair','Clair']],p.theme),{k:'ac',l:"Couleur d'accent",t:'color',v:S.ac},sl('fs','Taille du texte',[[15,'Petite'],[16,'Normale'],[18,'Grande'],[20,'Très grande']],p.fs),
   sl('prev','Aperçu dans la liste',yn,p.prev),sl('date','Date dans la liste',yn,p.date),sl('wc','Compteur de mots',yn,p.wc),
   sl('hp','Accueil : épinglées',yn,p.hp),sl('hr','Accueil : récentes',yn,p.hr),sl('hn','Nombre de récentes',[[3,'3'],[6,'6'],[10,'10']],p.hn),sl('ht','Accueil : tags',yn,p.ht),
-  sl('lock','Verrouillage auto des coffres',[[1,'1 min'],[2,'2 min'],[5,'5 min'],[10,'10 min'],[0,'Jamais']],p.lock)]);
- if(!r)return;const{ac,...q}=r;for(const k in q)q[k]=isNaN(q[k])?q[k]:+q[k];S.pref=q;S.ac=ac;$('#ac').value=ac;applyPrefs();save();render()}
+  sl('lock','Verrouillage auto des coffres',[[1,'1 min'],[2,'2 min'],[5,'5 min'],[10,'10 min'],[0,'Jamais']],p.lock),{k:'gr',l:'Synchro GitHub : dépôt privé (utilisateur/nom)',v:g.repo||''},{k:'gt',l:'Token GitHub (accès Contents à ce dépôt)',t:'password',v:g.token||''},{k:'gp',l:'Mot de passe de chiffrement de la synchro (facultatif)',t:'password',v:g.pw||''}]);
+ if(!r)return;const{ac,gr,gt,gp,...q}=r;for(const k in q)q[k]=isNaN(q[k])?q[k]:+q[k];S.pref=q;S.ac=ac;S.gh={repo:gr.trim(),token:gt.trim(),pw:gp};$('#ac').value=ac;applyPrefs();save();render();if(S.gh.repo&&S.gh.token)autoSync(true)}
 const TC='<div class="ci"><span class="chk" contenteditable="false"></span>&nbsp;</div>';
 const TP={'Journal du jour':()=>[new Date().toLocaleDateString('fr-BE',{dateStyle:'full'}),'<h2>Humeur</h2><div><br></div><h2>À faire</h2>'+TC+'<h2>Notes</h2><div><br></div>'],'Liste de courses':()=>['Courses',TC],'Compte rendu de réunion':()=>['Réunion','<h2>Participants</h2><ul><li><br></li></ul><h2>Décisions</h2><ul><li><br></li></ul><h2>Actions</h2>'+TC],'Projet':()=>['Projet','<h2>Objectif</h2><div><br></div><h2>Étapes</h2><ol><li><br></li></ol><h2>Idées</h2><div><br></div>']};
 async function tplNote(){if(!okSel())return;const r=await ask('Nouvelle note depuis un modèle',[{k:'m',l:'Modèle',o:Object.keys(TP).map(k=>[k,k])}]);if(!r)return;
@@ -309,6 +379,6 @@ function graph(){const ns=live(S.notes).filter(n=>!vk(n)||pl[n.id]);if(!ns.lengt
 $('#tp').onclick=tplNote;$('#gh').onclick=graph;$('#st').onclick=settings;$('#gx').onclick=()=>$('#gv').style.display='none';
 $('#hm').onclick=()=>{flush();cur=null;$('#ew').style.display='none';$('#ph').style.display='block';if(innerWidth<900)document.body.classList.remove('sb');render()};
 applyPrefs();
-addEventListener('pagehide',flush);render();
+addEventListener('pagehide',flush);render();autoSync();
 if(now()-S.lx>6048e5&&live(S.notes).length)toast('Pense à envoyer une synchro pour sauvegarder tes notes');
 </script></body></html>
